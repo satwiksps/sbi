@@ -13,6 +13,7 @@ from tqdm.auto import tqdm
 
 from sbi.inference.posteriors.base_posterior import NeuralPosterior
 from sbi.inference.potentials.base_potential import BasePotential, CustomPotential
+from sbi.samplers.importance.sir import sampling_importance_resampling
 from sbi.samplers.vi.vi_divergence_optimizers import get_VI_method
 from sbi.samplers.vi.vi_pyro_flows import get_flow_builder
 from sbi.samplers.vi.vi_quality_control import get_quality_metric
@@ -367,7 +368,12 @@ class VIPosterior(NeuralPosterior):
             method = sample_with
 
         if method == "sir":
-            return self._sample_sir(sample_shape, x, **kwargs)
+            return self._sample_sir(
+                sample_shape, 
+                x, 
+                show_progress_bars=show_progress_bars, 
+                **kwargs
+            )
         else:
             samples = self.q.sample(torch.Size(sample_shape))
             return samples.reshape((*sample_shape, samples.shape[-1]))
@@ -376,7 +382,9 @@ class VIPosterior(NeuralPosterior):
         self,
         sample_shape: Shape,
         x: Tensor,
-        oversampling_factor: int = 10,
+        oversampling_factor: int = 32,
+        max_sampling_batch_size: int = 10000,
+        show_progress_bars: bool = False,
         **kwargs,
     ) -> Tensor:
         """Helper method for SIR sampling (Sampling-Importance-Resampling).
@@ -384,26 +392,20 @@ class VIPosterior(NeuralPosterior):
         Draws candidates from the variational posterior q, calculates importance
         weights w = p(theta|x) / q(theta), and resamples.
         """
-        num_requested_samples = torch.Size(sample_shape).numel()
-        num_candidates = num_requested_samples * oversampling_factor
-        candidates = self.q.sample(torch.Size((num_candidates,)))
+        num_samples = torch.Size(sample_shape).numel()
 
-        with torch.no_grad():
-            if hasattr(self.potential_fn, "set_x"):
-                self.potential_fn.set_x(x)
-                log_prob_target = self.potential_fn(candidates, track_gradients=False)
-            elif isinstance(self.potential_fn, BasePotential):
-                log_prob_target = self.potential_fn(candidates, x=x)
-            else:
-                log_prob_target = self.potential_fn(candidates, x)
+        if hasattr(self.potential_fn, "set_x"):
+            self.potential_fn.set_x(x)
 
-            log_prob_proposal = self.q.log_prob(candidates).reshape(candidates.shape[0])
-            log_weights = log_prob_target - log_prob_proposal
-            weights = torch.softmax(log_weights, dim=0)
-            indices = torch.multinomial(
-                weights, num_requested_samples, replacement=True
-            )
-            samples = candidates[indices]
+        samples = sampling_importance_resampling(
+            self.potential_fn,
+            proposal=self.q,
+            num_samples=num_samples,
+            num_candidate_samples=oversampling_factor,
+            show_progress_bars=show_progress_bars,
+            max_sampling_batch_size=max_sampling_batch_size,
+            device=self._device,
+        )
 
         return samples.reshape((*sample_shape, samples.shape[-1]))
 
