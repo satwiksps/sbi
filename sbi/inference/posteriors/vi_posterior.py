@@ -387,19 +387,27 @@ class VIPosterior(NeuralPosterior):
         show_progress_bars: bool = False,
         **kwargs,
     ) -> Tensor:
-        """Helper method for SIR sampling (Sampling-Importance-Resampling).
+        """Helper method for SIR sampling using the sbi internal helper.
 
-        Draws candidates from the variational posterior q, calculates importance
-        weights w = p(theta|x) / q(theta), and resamples.
+        Adapts the pattern from ImportanceSamplingPosterior to correct 
+        variational bias using the potential function.
         """
         num_samples = torch.Size(sample_shape).numel()
 
         if hasattr(self.potential_fn, "set_x"):
             self.potential_fn.set_x(x)
 
+        class FlattenedProposal:
+            def __init__(self, q):
+                self.q = q
+            def sample(self, sample_shape):
+                return self.q.sample(sample_shape)
+            def log_prob(self, theta):
+                return self.q.log_prob(theta).reshape(-1)
+
         samples = sampling_importance_resampling(
             self.potential_fn,
-            proposal=self.q,
+            proposal=FlattenedProposal(self.q),
             num_samples=num_samples,
             num_candidate_samples=oversampling_factor,
             show_progress_bars=show_progress_bars,

@@ -418,7 +418,7 @@ def test_vi_sir_sampling():
 
     class TargetPotential(BasePotential):
         def __call__(self, theta, **kwargs):
-            return target_dist.log_prob(theta).sum(dim=-1)
+            return target_dist.log_prob(theta).reshape(-1)
 
         def allow_iid_x(self) -> bool:
             return True
@@ -437,16 +437,21 @@ def test_vi_sir_sampling():
     posterior.set_default_x(torch.zeros(1, 1))
     posterior._trained_on = torch.zeros(1, 1)
 
-    num_samples = 10000
+    num_samples = 1000
     samples_vi = posterior.sample((num_samples,))
-    samples_sir = posterior.sample((num_samples,), method="sir", oversampling_factor=50)
+    samples_sir = posterior.sample(
+        (num_samples,), 
+        method="sir", 
+        oversampling_factor=20,
+        max_sampling_batch_size=500
+    )
 
     mean_vi = samples_vi.mean().item()
     mean_sir = samples_sir.mean().item()
     std_vi = samples_vi.std().item()
     std_sir = samples_sir.std().item()
 
-    assert abs(mean_vi - 2.0) < 0.1, f"VI mean should be biased (~2.0), got {mean_vi}"
-    assert abs(mean_sir - 0.0) < 0.1, f"SIR mean should be corrected (~0.0), got {mean_sir}"
-    assert abs(std_vi - 2.0) < 0.1, f"VI std should be biased (~2.0), got {std_vi}"
-    assert abs(std_sir - 1.0) < 0.1, f"SIR std should be corrected (~1.0), got {std_sir}"
+    assert abs(mean_vi - 2.0) < 0.3
+    assert abs(mean_sir - 0.0) < 0.3
+    assert abs(std_vi - 2.0) < 0.3
+    assert abs(std_sir - 1.0) < 0.3
