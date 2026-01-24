@@ -335,6 +335,10 @@ def test_vi_posterior_inferface():
     # Test sampling from trained posterior
     posterior.sample()
 
+    # Test SIR sampling interface
+    posterior.sample(sample_shape=(10,), method="sir", oversampling_factor=2)
+    posterior.sample(sample_shape=(10,), sample_with="sir", oversampling_factor=2)
+
     # Testing evaluate
     posterior.evaluate()
     posterior.evaluate("prop")
@@ -404,3 +408,45 @@ def test_vi_flow_builders(num_dim: int, q: str):
     assert sample_batch.shape == (10, num_dim), "The sample shape is not as expected"
     log_prob_batch = q.log_prob(sample_batch)
     assert log_prob_batch.shape == (10,), "The log_prob shape is not as expected"
+
+
+def test_vi_sir_sampling():
+    """Test that SIR sampling corrects a biased variational posterior."""
+
+    target_dist = torch.distributions.Normal(torch.tensor([0.0]), torch.tensor([1.0]))
+    prior = torch.distributions.Normal(torch.zeros(1), torch.ones(1))
+
+    class TargetPotential(BasePotential):
+        def __call__(self, theta, **kwargs):
+            return target_dist.log_prob(theta).sum(dim=-1)
+
+        def allow_iid_x(self) -> bool:
+            return True
+
+    mu = torch.tensor([2.0], requires_grad=True)
+    scale = torch.tensor([2.0], requires_grad=True)
+    q_dist = torch.distributions.Normal(mu, scale)
+    potential_fn = TargetPotential(prior=prior)
+
+    posterior = VIPosterior(
+        potential_fn=potential_fn,
+        prior=prior,
+        q=q_dist,
+        parameters=[mu, scale],
+    )
+    posterior.set_default_x(torch.zeros(1, 1))
+    posterior._trained_on = torch.zeros(1, 1)
+
+    num_samples = 10000
+    samples_vi = posterior.sample((num_samples,))
+    samples_sir = posterior.sample((num_samples,), method="sir", oversampling_factor=50)
+
+    mean_vi = samples_vi.mean().item()
+    mean_sir = samples_sir.mean().item()
+    std_vi = samples_vi.std().item()
+    std_sir = samples_sir.std().item()
+
+    assert abs(mean_vi - 2.0) < 0.1, f"VI mean should be biased (~2.0), got {mean_vi}"
+    assert abs(mean_sir - 0.0) < 0.1, f"SIR mean should be corrected (~0.0), got {mean_sir}"
+    assert abs(std_vi - 2.0) < 0.1, f"VI std should be biased (~2.0), got {std_vi}"
+    assert abs(std_sir - 1.0) < 0.1, f"SIR std should be corrected (~1.0), got {std_sir}"
