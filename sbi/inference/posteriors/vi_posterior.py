@@ -332,7 +332,10 @@ class VIPosterior(NeuralPosterior):
         self,
         sample_shape: Shape = torch.Size(),
         x: Optional[Tensor] = None,
+        method: Optional[str] = None,
+        sample_with: Optional[str] = None,
         show_progress_bars: bool = True,
+        **kwargs,
     ) -> Tensor:
         r"""Draw samples from the variational posterior distribution $p(\theta|x)$.
 
@@ -340,8 +343,15 @@ class VIPosterior(NeuralPosterior):
             sample_shape: Desired shape of samples that are drawn from the posterior.
             x: Conditioning observation $x_o$. If not provided, uses the default `x`
                 set via `.set_default_x()`.
+            method: Sampling method. If 'sir', uses Sampling-Importance-Resampling
+                to correct for the approximation error in the variational distribution.
+                If None, samples directly from the variational distribution.
+            sample_with: Deprecated alias for `method`.
             show_progress_bars: Unused for `VIPosterior` since sampling from the
                 variational distribution is fast. Included for API consistency.
+            kwargs: Additional arguments for the sampling method. For method='sir',
+                this includes 'oversampling_factor' (int), which determines the number
+                of candidate samples drawn relative to the requested samples.
 
         Returns:
             Samples from posterior.
@@ -352,7 +362,49 @@ class VIPosterior(NeuralPosterior):
                 f"The variational posterior was not fit on the specified `default_x` "
                 f"{x}. Please train using `posterior.train()`."
             )
-        samples = self.q.sample(torch.Size(sample_shape))
+
+        if method is None and sample_with is not None:
+            method = sample_with
+
+        if method == "sir":
+            return self._sample_sir(sample_shape, x, **kwargs)
+        else:
+            samples = self.q.sample(torch.Size(sample_shape))
+            return samples.reshape((*sample_shape, samples.shape[-1]))
+
+    def _sample_sir(
+        self,
+        sample_shape: Shape,
+        x: Tensor,
+        oversampling_factor: int = 10,
+        **kwargs,
+    ) -> Tensor:
+        """Helper method for SIR sampling (Sampling-Importance-Resampling).
+
+        Draws candidates from the variational posterior q, calculates importance
+        weights w = p(theta|x) / q(theta), and resamples.
+        """
+        num_requested_samples = torch.Size(sample_shape).numel()
+        num_candidates = num_requested_samples * oversampling_factor
+        candidates = self.q.sample(torch.Size((num_candidates,)))
+
+        with torch.no_grad():
+            if hasattr(self.potential_fn, "set_x"):
+                self.potential_fn.set_x(x)
+                log_prob_target = self.potential_fn(candidates, track_gradients=False)
+            elif isinstance(self.potential_fn, BasePotential):
+                log_prob_target = self.potential_fn(candidates, x=x)
+            else:
+                log_prob_target = self.potential_fn(candidates, x)
+
+            log_prob_proposal = self.q.log_prob(candidates)
+            log_weights = log_prob_target - log_prob_proposal
+            weights = torch.softmax(log_weights, dim=0)
+            indices = torch.multinomial(
+                weights, num_requested_samples, replacement=True
+            )
+            samples = candidates[indices]
+
         return samples.reshape((*sample_shape, samples.shape[-1]))
 
     def sample_batched(
