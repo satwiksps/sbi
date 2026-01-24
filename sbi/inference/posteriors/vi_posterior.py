@@ -397,7 +397,7 @@ class VIPosterior(NeuralPosterior):
             else:
                 log_prob_target = self.potential_fn(candidates, x)
 
-            log_prob_proposal = self.q.log_prob(candidates)
+            log_prob_proposal = self.q.log_prob(candidates).reshape(candidates.shape[0])
             log_weights = log_prob_target - log_prob_proposal
             weights = torch.softmax(log_weights, dim=0)
             indices = torch.multinomial(
