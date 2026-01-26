@@ -30,6 +30,7 @@ readme = "README.md"
 keywords = ["Bayesian inference", "simulation-based inference", "PyTorch"]
 dependencies = [
     "arviz",
+    "azula",
     "joblib>=1.0.0",
     "matplotlib",
     "numpy",
