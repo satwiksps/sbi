@@ -32,6 +32,13 @@ from sbi.utils.sbiutils import (
 )
 from sbi.utils.torchutils import ensure_theta_batched
 
+try:
+    from sbi.samplers.score.azula import AzulaDiffuser
+
+    AZULA_INSTALLED = True
+except ImportError:
+    AZULA_INSTALLED = False
+
 
 class VectorFieldPosterior(NeuralPosterior):
     r"""Posterior based on flow- or score-matching estimators.
@@ -103,7 +110,8 @@ class VectorFieldPosterior(NeuralPosterior):
         assert self.sample_with in [
             "ode",
             "sde",
-        ], f"sample_with must be 'ode' or 'sde', but is {self.sample_with}."
+            "azula",
+        ], f"sample_with must be 'ode', 'sde', or 'azula', but is {self.sample_with}."
         self.max_sampling_batch_size = max_sampling_batch_size
 
         self._purpose = """It samples from the vector field model given the \
@@ -273,9 +281,47 @@ class VectorFieldPosterior(NeuralPosterior):
                     (num_samples,),
                     **proposal_sampling_kwargs,
                 )
+        elif sample_with == "azula":
+            if not AZULA_INSTALLED:
+                raise ImportError(
+                    "Azula is not installed. Please install it to use "
+                    "sample_with='azula'."
+                )
+            # Use predictor arg to specify sampler type
+            sampler_type = predictor if isinstance(predictor, str) else "heun"
+
+            # Additional params for azula sampler
+            sampler_params = predictor_params or {}
+
+            proposal_sampling_kwargs = {
+                "sampler_type": sampler_type,
+                "sampler_params": sampler_params,
+                "steps": steps,
+                "ts": ts,
+                "show_progress_bars": show_progress_bars,
+                "save_intermediate": False,
+            }
+
+            if reject_outside_prior:
+                samples, _ = rejection.accept_reject_sample(
+                    proposal=self._sample_via_azula,
+                    accept_reject_fn=lambda theta: within_support(self.prior, theta),
+                    num_samples=num_samples,
+                    show_progress_bars=show_progress_bars,
+                    max_sampling_batch_size=max_sampling_batch_size,
+                    proposal_sampling_kwargs=proposal_sampling_kwargs,
+                    max_sampling_time=max_sampling_time,
+                    return_partial_on_timeout=return_partial_on_timeout,
+                )
+            else:
+                samples = self._sample_via_azula(
+                    (num_samples,),
+                    **proposal_sampling_kwargs,
+                )
         else:
             raise ValueError(
-                f"Expected sample_with to be 'ode' or 'sde', but got {sample_with}."
+                f"Expected sample_with as 'ode', 'sde', or 'azula', "
+                f"but got {sample_with}."
             )
 
         if not reject_outside_prior:
@@ -284,6 +330,62 @@ class VectorFieldPosterior(NeuralPosterior):
         samples = samples.reshape(
             sample_shape + self.vector_field_estimator.input_shape
         )
+        return samples
+
+    def _sample_via_azula(
+        self,
+        sample_shape: Shape = torch.Size(),
+        sampler_type: str = "heun",
+        sampler_params: Optional[Dict] = None,
+        steps: int = 500,
+        ts: Optional[Tensor] = None,
+        max_sampling_batch_size: int = 10_000,
+        show_progress_bars: bool = True,
+        save_intermediate: bool = False,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Return samples from posterior distribution using Azula.
+        """
+        diffuser = AzulaDiffuser(
+            self.potential_fn,
+            sampler_type=sampler_type,
+            sampler_params=sampler_params,
+        )
+
+        total_samples_needed = torch.Size(sample_shape).numel()
+
+        effective_batch_size = (
+            self.max_sampling_batch_size
+            if max_sampling_batch_size is None
+            else max_sampling_batch_size
+        )
+        effective_batch_size = min(effective_batch_size, total_samples_needed)
+
+        if ts is None:
+            ts = self.vector_field_estimator.solve_schedule(steps)
+        ts = ts.to(self.device)
+
+        num_batches = math.ceil(total_samples_needed / effective_batch_size)
+        all_samples = []
+        samples_generated = 0
+
+        for _ in range(num_batches):
+            remaining_samples = total_samples_needed - samples_generated
+            current_batch_size = min(effective_batch_size, remaining_samples)
+
+            # AzulaDiffuser run
+            batch_samples = diffuser.run(
+                num_samples=current_batch_size,
+                ts=ts,
+                show_progress_bars=show_progress_bars,
+                save_intermediate=save_intermediate,
+            )
+
+            all_samples.append(batch_samples)
+            samples_generated += current_batch_size
+
+        samples = torch.cat(all_samples, dim=0)[:total_samples_needed]
         return samples
 
     def _sample_via_diffusion(
@@ -568,6 +670,42 @@ class VectorFieldPosterior(NeuralPosterior):
             else:
                 # Bypass rejection sampling.
                 samples = self._sample_via_diffusion(
+                    (num_samples,), **proposal_sampling_kwargs
+                )
+            samples = samples.reshape(
+                sample_shape + batch_shape + self.vector_field_estimator.input_shape
+            )
+        elif self.sample_with == "azula":
+            if not AZULA_INSTALLED:
+                raise ImportError(
+                    "Azula is not installed."
+                    "Please install it to use sample_with='azula'."
+                )
+            sampler_type = predictor if isinstance(predictor, str) else "heun"
+            sampler_params = predictor_params or {}
+
+            proposal_sampling_kwargs = {
+                "sampler_type": sampler_type,
+                "sampler_params": sampler_params,
+                "steps": steps,
+                "ts": ts,
+                "show_progress_bars": show_progress_bars,
+                "save_intermediate": False,
+            }
+            if reject_outside_prior:
+                samples, _ = rejection.accept_reject_sample(
+                    proposal=self._sample_via_azula,
+                    accept_reject_fn=lambda theta: within_support(self.prior, theta),
+                    num_samples=num_samples,
+                    num_xos=batch_size,
+                    show_progress_bars=show_progress_bars,
+                    max_sampling_batch_size=max_sampling_batch_size,
+                    proposal_sampling_kwargs=proposal_sampling_kwargs,
+                    max_sampling_time=max_sampling_time,
+                    return_partial_on_timeout=return_partial_on_timeout,
+                )
+            else:
+                samples = self._sample_via_azula(
                     (num_samples,), **proposal_sampling_kwargs
                 )
             samples = samples.reshape(

@@ -47,6 +47,7 @@ dependencies = [
 
 [project.optional-dependencies]
 notebook = ["notebook<=6.4.12"]
+azula = ["azula>=0.0.1"]
 doc = [
     "sbi[notebook]",
     # Documentation
@@ -86,6 +87,7 @@ dev = [
     "pytest-testmon",
     "pytest-xdist",
     "sbi[notebook]",  # for tutorial tests.
+    "sbi[azula]",
     "torchtestcase",
 ]
 
