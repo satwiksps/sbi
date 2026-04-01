@@ -2176,7 +2176,7 @@ defined by <code>ScoreEstimatorConfig</code>; unknown keys raise
 
 
 <h2 id="sbi.neural_nets.factory.posterior_flow_nn" class="doc doc-heading">
-            <code class=" language-python"><span class="n">posterior_flow_nn</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">z_score_theta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z_score_x</span><span class="o">=</span><span class="s1">&#39;independent&#39;</span><span class="p">,</span> <span class="n">hidden_features</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">embedding_net</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">(),</span> <span class="n">time_emb_type</span><span class="o">=</span><span class="s1">&#39;sinusoidal&#39;</span><span class="p">,</span> <span class="n">t_embedding_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class=" language-python"><span class="n">posterior_flow_nn</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">z_score_theta</span><span class="o">=</span><span class="s1">&#39;independent&#39;</span><span class="p">,</span> <span class="n">z_score_x</span><span class="o">=</span><span class="s1">&#39;independent&#39;</span><span class="p">,</span> <span class="n">hidden_features</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">embedding_net</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">(),</span> <span class="n">time_emb_type</span><span class="o">=</span><span class="s1">&#39;sinusoidal&#39;</span><span class="p">,</span> <span class="n">t_embedding_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">gaussian_baseline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 <a href="#sbi.neural_nets.factory.posterior_flow_nn" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2230,11 +2230,13 @@ Defaults to &lsquo;mlp&rsquo;.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>This is not supported for FMPE and will raise an error.</p>
+                <p>Whether to z-score theta for time-dependent normalization.
+This enables time-dependent z-scoring which helps FMPE learn when
+theta is far from N(0,1). Defaults to &lsquo;independent&rsquo;.</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                  <code>&#39;independent&#39;</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2246,8 +2248,8 @@ Defaults to &lsquo;mlp&rsquo;.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Whether to z-score xs passing into the network, same options as
-z_score_theta.</p>
+                <p>Whether to z-score observations (x) before passing to the
+embedding network. Defaults to &lsquo;independent&rsquo;.</p>
               </div>
             </td>
             <td>
@@ -2333,6 +2335,24 @@ nn.Identity().</p>
             </td>
             <td>
                   <code>32</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>gaussian_baseline</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, use analytical Gaussian baseline velocity
+derived from Bayes&rsquo; rule. The network then only learns the residual.
+Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2466,7 +2486,7 @@ defined by <code>FlowEstimatorConfig</code>; unknown keys raise
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
     <span class="n">z_score_theta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
         <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;independent&quot;</span><span class="p">,</span> <span class="s2">&quot;structured&quot;</span><span class="p">,</span> <span class="s2">&quot;transform_to_unconstrained&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;independent&quot;</span><span class="p">,</span>
     <span class="n">z_score_x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
         <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;independent&quot;</span><span class="p">,</span> <span class="s2">&quot;structured&quot;</span><span class="p">,</span> <span class="s2">&quot;transform_to_unconstrained&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span>
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;independent&quot;</span><span class="p">,</span>
@@ -2475,6 +2495,7 @@ defined by <code>FlowEstimatorConfig</code>; unknown keys raise
     <span class="n">embedding_net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">(),</span>
     <span class="n">time_emb_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sinusoidal&quot;</span><span class="p">,</span> <span class="s2">&quot;fourier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sinusoidal&quot;</span><span class="p">,</span>
     <span class="n">t_embedding_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">gaussian_baseline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build util function that builds a FlowMatchingEstimator object for flow-based</span>
@@ -2489,15 +2510,20 @@ defined by <code>FlowEstimatorConfig</code>; unknown keys raise
 <span class="sd">            - &#39;transformer_cross_attention&#39;: Transformer with cross-attention.</span>
 <span class="sd">            -  nn.Module: Custom network</span>
 <span class="sd">            Defaults to &#39;mlp&#39;.</span>
-<span class="sd">        z_score_theta: This is not supported for FMPE and will raise an error.</span>
-<span class="sd">        z_score_x: Whether to z-score xs passing into the network, same options as</span>
-<span class="sd">            z_score_theta.</span>
+<span class="sd">        z_score_theta: Whether to z-score theta for time-dependent normalization.</span>
+<span class="sd">            This enables time-dependent z-scoring which helps FMPE learn when</span>
+<span class="sd">            theta is far from N(0,1). Defaults to &#39;independent&#39;.</span>
+<span class="sd">        z_score_x: Whether to z-score observations (x) before passing to the</span>
+<span class="sd">            embedding network. Defaults to &#39;independent&#39;.</span>
 <span class="sd">        hidden_features: Number of hidden units per layer. Defaults to 100.</span>
 <span class="sd">        num_layers: Number of hidden layers. Defaults to 5.</span>
 <span class="sd">        embedding_net: Embedding network for x (conditioning variable). Defaults to</span>
 <span class="sd">            nn.Identity().</span>
 <span class="sd">        time_emb_type: Type of time embedding. Defaults to &#39;sinusoidal&#39;.</span>
 <span class="sd">        t_embedding_dim: Embedding dimension of diffusion time. Defaults to 32.</span>
+<span class="sd">        gaussian_baseline: If True, use analytical Gaussian baseline velocity</span>
+<span class="sd">            derived from Bayes&#39; rule. The network then only learns the residual.</span>
+<span class="sd">            Defaults to False.</span>
 <span class="sd">        **kwargs: Additional estimator / network arguments.  Valid keys are</span>
 <span class="sd">            defined by ``FlowEstimatorConfig``; unknown keys raise</span>
 <span class="sd">            ``TypeError``.</span>
@@ -2505,23 +2531,17 @@ defined by <code>FlowEstimatorConfig</code>; unknown keys raise
 <span class="sd">    Returns:</span>
 <span class="sd">        Constructor function for FMPE.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">z_score_theta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;z_score_theta is not supported for FMPE. For simulator &quot;</span>
-            <span class="s2">&quot;parameters with highly different scales, we recommend &quot;</span>
-            <span class="s2">&quot;z-scoring the inputs manually beforehand.&quot;</span>
-        <span class="p">)</span>
-
     <span class="c1"># Map user-facing parameter names to internal names.</span>
     <span class="n">mapped</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-        <span class="n">z_score_x</span><span class="o">=</span><span class="n">z_score_x</span><span class="p">,</span>
-        <span class="n">z_score_y</span><span class="o">=</span><span class="n">z_score_theta</span><span class="p">,</span>
+        <span class="n">z_score_x</span><span class="o">=</span><span class="n">z_score_theta</span><span class="p">,</span>
+        <span class="n">z_score_y</span><span class="o">=</span><span class="n">z_score_x</span><span class="p">,</span>
         <span class="n">hidden_features</span><span class="o">=</span><span class="n">hidden_features</span><span class="p">,</span>
         <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
         <span class="n">embedding_net</span><span class="o">=</span><span class="n">check_net_device</span><span class="p">(</span><span class="n">embedding_net</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">embedding_net_warn_msg</span><span class="p">),</span>
         <span class="n">time_embedding_dim</span><span class="o">=</span><span class="n">t_embedding_dim</span><span class="p">,</span>
         <span class="n">time_emb_type</span><span class="o">=</span><span class="n">time_emb_type</span><span class="p">,</span>
         <span class="n">net</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+        <span class="n">gaussian_baseline</span><span class="o">=</span><span class="n">gaussian_baseline</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Validate against known fields — warns on unknown kwargs (typos)</span>
@@ -2582,65 +2602,7 @@ where condition_shape is the shape of the condition tensor.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>sbi/neural_nets/estimators/base.py</code></summary>
-                <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
+                <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">203</span>
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
@@ -2686,7 +2648,65 @@ where condition_shape is the shape of the condition tensor.</p>
 <span class="normal">246</span>
 <span class="normal">247</span>
 <span class="normal">248</span>
-<span class="normal">249</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ConditionalDensityEstimator</span><span class="p">(</span><span class="n">ConditionalEstimator</span><span class="p">):</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ConditionalDensityEstimator</span><span class="p">(</span><span class="n">ConditionalEstimator</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for conditional density estimators.</span>
 
 <span class="sd">    The density estimator class is a wrapper around neural networks that allows to</span>
@@ -2728,15 +2748,15 @@ where condition_shape is the shape of the condition tensor.</p>
 
 <span class="sd">        Args:</span>
 <span class="sd">            input: Inputs to evaluate the log probability on of shape</span>
-<span class="sd">                    `(sample_dim_input, batch_dim_input, *event_shape_input)`.</span>
+<span class="sd">                    `(sample_dim, batch_dim, *event_shape_input)` or</span>
+<span class="sd">                    `(batch_dim, *event_shape_input)`.</span>
 <span class="sd">            condition: Conditions of shape</span>
-<span class="sd">                `(batch_dim_condition, *event_shape_condition)`.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            RuntimeError: If batch_dim_input and batch_dim_condition do not match.</span>
+<span class="sd">                `(batch_dim, *event_shape_condition)` or</span>
+<span class="sd">                `(sample_dim, batch_dim, *event_shape_condition)`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Sample-wise log probabilities.</span>
+<span class="sd">            Sample-wise log probabilities, shape `(sample_dim, batch_dim)`.</span>
+<span class="sd">            Batch dimensions of input and condition are broadcast.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">pass</span>
@@ -2910,20 +2930,20 @@ evaluated (and which is also the event_shape of samples).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sbi/neural_nets/estimators/base.py</code></summary>
-              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">condition_shape</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for density estimators.</span>
@@ -2983,7 +3003,8 @@ i.e. batched conditions.</p>
             <td>
               <div class="doc-md-description">
                 <p>Inputs to evaluate the log probability on of shape
-    <code>(sample_dim_input, batch_dim_input, *event_shape_input)</code>.</p>
+    <code>(sample_dim, batch_dim, *event_shape_input)</code> or
+    <code>(batch_dim, *event_shape_input)</code>.</p>
               </div>
             </td>
             <td>
@@ -3000,34 +3021,12 @@ i.e. batched conditions.</p>
             <td>
               <div class="doc-md-description">
                 <p>Conditions of shape
-<code>(batch_dim_condition, *event_shape_condition)</code>.</p>
+<code>(batch_dim, *event_shape_condition)</code> or
+<code>(sample_dim, batch_dim, *event_shape_condition)</code>.</p>
               </div>
             </td>
             <td>
                 <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="RuntimeError">RuntimeError</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If batch_dim_input and batch_dim_condition do not match.</p>
-              </div>
             </td>
           </tr>
       </tbody>
@@ -3049,7 +3048,17 @@ i.e. batched conditions.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Sample-wise log probabilities.</p>
+                <p>Sample-wise log probabilities, shape <code>(sample_dim, batch_dim)</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Batch dimensions of input and condition are broadcast.</p>
               </div>
             </td>
           </tr>
@@ -3059,40 +3068,40 @@ i.e. batched conditions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sbi/neural_nets/estimators/base.py</code></summary>
-              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
+              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the log probabilities of the inputs given a condition or multiple</span>
 <span class="sd">    i.e. batched conditions.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input: Inputs to evaluate the log probability on of shape</span>
-<span class="sd">                `(sample_dim_input, batch_dim_input, *event_shape_input)`.</span>
+<span class="sd">                `(sample_dim, batch_dim, *event_shape_input)` or</span>
+<span class="sd">                `(batch_dim, *event_shape_input)`.</span>
 <span class="sd">        condition: Conditions of shape</span>
-<span class="sd">            `(batch_dim_condition, *event_shape_condition)`.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        RuntimeError: If batch_dim_input and batch_dim_condition do not match.</span>
+<span class="sd">            `(batch_dim, *event_shape_condition)` or</span>
+<span class="sd">            `(sample_dim, batch_dim, *event_shape_condition)`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Sample-wise log probabilities.</span>
+<span class="sd">        Sample-wise log probabilities, shape `(sample_dim, batch_dim)`.</span>
+<span class="sd">        Batch dimensions of input and condition are broadcast.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">pass</span>
@@ -3193,20 +3202,20 @@ i.e. batched conditions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sbi/neural_nets/estimators/base.py</code></summary>
-              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
+              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the loss for training the density estimator.</span>
 
@@ -3316,19 +3325,19 @@ i.e. batched conditions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sbi/neural_nets/estimators/base.py</code></summary>
-              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
+              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_shape</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return samples from the density estimator.</span>
 
@@ -3440,27 +3449,27 @@ then be overwritten to provide a more efficient implementation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sbi/neural_nets/estimators/base.py</code></summary>
-              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span>
-<span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span>
-<span class="normal">249</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sample_and_log_prob</span><span class="p">(</span>
+              <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sample_and_log_prob</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">sample_shape</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return samples and their density from the density estimator.</span>
